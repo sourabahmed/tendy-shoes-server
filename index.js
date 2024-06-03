@@ -25,6 +25,13 @@ async function run() {
     const tendyShoesDB = client.db("tendyShoesDB");
     const shoesCollection = tendyShoesDB.collection("shoesCollection");
 
+    // Create singel data 
+    app.post("/products", async(req, res) => {
+      const productData = req.body;
+      const result = await shoesCollection.insertOne(productData);
+      res.send(result);
+      console.log("data added")
+    })
     //get all products
     app.get("/products", async(req, res) => {
       const shoesData = shoesCollection.find();
@@ -36,6 +43,19 @@ async function run() {
     app.get("/products/:id", async(req, res) => {
       const id = req.params.id;
       const productData =await shoesCollection.findOne({_id: new ObjectId(id)});
+      res.send(productData);
+    })
+    // update single data
+    app.patch("/products/:id", async(req, res) => {
+      const id = req.params.id;
+      const updatedData = req.body;
+      const productData =await shoesCollection.updateOne({_id: new ObjectId(id)}, {$set: updatedData});
+      res.send(productData);
+    })
+    // delete single data
+    app.delete("/products/:id", async(req, res) => {
+      const id = req.params.id;
+      const productData =await shoesCollection.deleteOne({_id: new ObjectId(id)});
       res.send(productData);
     })
 
