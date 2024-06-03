@@ -25,11 +25,18 @@ async function run() {
     const tendyShoesDB = client.db("tendyShoesDB");
     const shoesCollection = tendyShoesDB.collection("shoesCollection");
 
-    //get shoes
-    app.get("/shoes", async(req, res) => {
+    //get all products
+    app.get("/products", async(req, res) => {
       const shoesData = shoesCollection.find();
       const result = await shoesData.toArray();
       res.send(result);
+    })
+
+    //get single product
+    app.get("/products/:id", async(req, res) => {
+      const id = req.params.id;
+      const productData =await shoesCollection.findOne({_id: new ObjectId(id)});
+      res.send(productData);
     })
 
   } finally {
@@ -39,7 +46,7 @@ async function run() {
 run().catch(console.log);
 
 
-app.get('/test', (req, res) => {
+app.get('/', (req, res) => {
   res.send('Hello World!')
 })
 
