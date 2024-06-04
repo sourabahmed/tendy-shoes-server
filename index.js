@@ -9,6 +9,28 @@ app.use(cors());
 app.use(express.json());
 
 
+function createToken(user) {
+  const token = jwt.sign(
+    {
+      email: user.email,
+    },
+    "secret",
+    { expiresIn: "7d" }
+  );
+  return token;
+}
+
+function verifyToken(req, res, next) {
+  const token = req.headers.authorization.split(" ")[1];
+  const verify = jwt.verify(token, "secret");
+  if (!verify?.email) {
+    return res.send("You are not authorized");
+  }
+  req.user = verify.email;
+  next();
+}
+
+
 const uri = "mongodb+srv://tendy-shoes-user:tendy-shoes-pass@cluster0.fdqyro7.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 const client = new MongoClient(uri, {
   serverApi: {
@@ -36,7 +58,7 @@ async function run() {
       console.log("data added")
     })
     //get all products
-    app.get("/products", async(req, res) => {
+    app.get("/products", verifyToken, async(req, res) => {
       const shoesData = shoesCollection.find();
       const result = await shoesData.toArray();
       res.send(result);
@@ -49,14 +71,17 @@ async function run() {
       res.send(productData);
     })
     // update single data
-    app.patch("/products/:id", async(req, res) => {
+    app.patch("/products/:id", verifyToken, async(req, res) => {
       const id = req.params.id;
       const updatedData = req.body;
-      const productData =await shoesCollection.updateOne({_id: new ObjectId(id)}, {$set: updatedData});
-      res.send(productData);
+      const result = await shoesCollection.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: updatedData }
+      );
+      res.send(result);
     })
     // delete single data
-    app.delete("/products/:id", async(req, res) => {
+    app.delete("/products/:id", verifyToken, async(req, res) => {
       const id = req.params.id;
       const productData =await shoesCollection.deleteOne({_id: new ObjectId(id)});
       res.send(productData);
@@ -65,15 +90,17 @@ async function run() {
     // user
     app.post("/user", async (req, res) => {
       const user = req.body;
+      const token = createToken(user);
       const isUserExist = await userCollection.findOne({ email: user?.email });
       if (isUserExist?._id) {
         return res.send({
           status: "success",
           message: "Login success",
+          token
         });
       }
-      const result = await userCollection.insertOne(user);
-      return res.send(result)
+      await userCollection.insertOne(user);
+      return res.send(token)
     });
 
     app.get("/user/get/:id", async (req, res) => {
