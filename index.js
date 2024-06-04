@@ -1,6 +1,8 @@
 const express = require('express')
 const cors = require('cors')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const jwt = require('jsonwebtoken');
+
 
 const app = express()
 const port = 3000
@@ -51,14 +53,14 @@ async function run() {
     const userCollection = userDB.collection("userCollection");
 
     // Create singel data 
-    app.post("/products", async(req, res) => {
+    app.post("/products",  verifyToken, async(req, res) => {
       const productData = req.body;
       const result = await shoesCollection.insertOne(productData);
       res.send(result);
       console.log("data added")
     })
     //get all products
-    app.get("/products", verifyToken, async(req, res) => {
+    app.get("/products", async(req, res) => {
       const shoesData = shoesCollection.find();
       const result = await shoesData.toArray();
       res.send(result);
@@ -90,17 +92,18 @@ async function run() {
     // user
     app.post("/user", async (req, res) => {
       const user = req.body;
+
       const token = createToken(user);
       const isUserExist = await userCollection.findOne({ email: user?.email });
       if (isUserExist?._id) {
         return res.send({
-          status: "success",
+          statu: "success",
           message: "Login success",
-          token
+          token,
         });
       }
       await userCollection.insertOne(user);
-      return res.send(token)
+      return res.send({ token });
     });
 
     app.get("/user/get/:id", async (req, res) => {
