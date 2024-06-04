@@ -46,7 +46,7 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    await client.connect();
+    // await client.connect();
     const tendyShoesDB = client.db("tendyShoesDB");
     const userDB = client.db("userDB");
 
